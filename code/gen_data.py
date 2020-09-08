@@ -13,10 +13,11 @@ UNK_TOKEN = '<UNK>'
 POS_TO_ID = {PAD_TOKEN: 0, UNK_TOKEN: 1, 'NNP': 2, 'NN': 3, 'IN': 4, 'DT': 5, ',': 6, 'JJ': 7, 'NNS': 8, 'VBD': 9, 'CD': 10, 'CC': 11, '.': 12, 'RB': 13, 'VBN': 14, 'PRP': 15, 'TO': 16, 'VB': 17, 'VBG': 18, 'VBZ': 19, 'PRP$': 20, ':': 21, 'POS': 22, '\'\'': 23, '``': 24, '-RRB-': 25, '-LRB-': 26, 'VBP': 27, 'MD': 28, 'NNPS': 29, 'WP': 30, 'WDT': 31, 'WRB': 32, 'RP': 33, 'JJR': 34, 'JJS': 35, '$': 36, 'FW': 37, 'RBR': 38, 'SYM': 39, 'EX': 40, 'RBS': 41, 'WP$': 42, 'PDT': 43, 'LS': 44, 'UH': 45, '#': 46}
 
 MAX_SENT_LEN = 200
-MAX_NODE_NUM = 200
-MAX_ENTITY_NUM = 100
+MAX_NODE_NUM = 800
+MAX_ENTITY_NUM = 323
 MAX_SENT_NUM = 30
-MAX_NODE_PER_SENT = 40
+MAX_NODE_PER_SENT = 70
+MAX_LEN = 750 
 
 parser = argparse.ArgumentParser()
 parser.add_argument('--in_path', type = str, default =  "../data")
@@ -383,10 +384,10 @@ def Init(data_file_name, rel2id, max_length = 512, is_training = True, suffix=''
     print("Finish saving")
 
 print("=========================start to generate the training instances=========================")
-Init(train_annotated_file_name, rel2id, max_length = 512, is_training = False, suffix='_train')
+Init(train_annotated_file_name, rel2id, max_length = MAX_LEN, is_training = False, suffix='_train')
 print("=========================start to generate the dev instances=========================")
-Init(dev_file_name, rel2id, max_length = 512, is_training = False, suffix='_dev')
+Init(dev_file_name, rel2id, max_length = MAX_LEN, is_training = False, suffix='_dev')
 print("=========================start to generate the test instances=========================")
-Init(test_file_name, rel2id, max_length = 512, is_training = False, suffix='_test')
+Init(test_file_name, rel2id, max_length = MAX_LEN, is_training = False, suffix='_test')
 
 
