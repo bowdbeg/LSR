@@ -148,6 +148,8 @@ class Config(object):
         self.evaluate_epoch = args.evaluate_epoch
         self.finetune_emb = args.finetune_emb
 
+        self.device = torch.device('cuda') if args.cuda else torch.device('cpu')
+
     def set_data_path(self, data_path):
         self.data_path = data_path
     def set_max_length(self, max_length):
@@ -190,7 +192,7 @@ class Config(object):
 
         self.data_train_word = np.load(os.path.join(self.data_path, prefix + '_word.npy'))
 
-        # elmo_ids = batch_to_ids(batch_words).cuda()
+        # elmo_ids = batch_to_ids(batch_words).to(self.device)
         self.data_train_pos = np.load(os.path.join(self.data_path, prefix+'_pos.npy'))
         self.data_train_ner = np.load(os.path.join(self.data_path, prefix+'_ner.npy')) # word_embedding
         self.data_train_char = np.load(os.path.join(self.data_path, prefix+'_char.npy'))
@@ -268,36 +270,36 @@ class Config(object):
     def get_train_batch(self):
 
         random.shuffle(self.train_order)
-        context_idxs = torch.LongTensor(self.batch_size, self.max_length).cuda()
-        context_pos = torch.LongTensor(self.batch_size, self.max_length).cuda()
-        h_mapping = torch.Tensor(self.batch_size, self.h_t_limit, self.max_length).cuda()
-        t_mapping = torch.Tensor(self.batch_size, self.h_t_limit, self.max_length).cuda()
-        relation_multi_label = torch.Tensor(self.batch_size, self.h_t_limit, self.relation_num).cuda()
-        relation_mask = torch.Tensor(self.batch_size, self.h_t_limit).cuda()
+        context_idxs = torch.LongTensor(self.batch_size, self.max_length).to(self.device)
+        context_pos = torch.LongTensor(self.batch_size, self.max_length).to(self.device)
+        h_mapping = torch.Tensor(self.batch_size, self.h_t_limit, self.max_length).to(self.device)
+        t_mapping = torch.Tensor(self.batch_size, self.h_t_limit, self.max_length).to(self.device)
+        relation_multi_label = torch.Tensor(self.batch_size, self.h_t_limit, self.relation_num).to(self.device)
+        relation_mask = torch.Tensor(self.batch_size, self.h_t_limit).to(self.device)
 
-        pos_idx = torch.LongTensor(self.batch_size, self.max_length).cuda()
+        pos_idx = torch.LongTensor(self.batch_size, self.max_length).to(self.device)
 
-        context_ner = torch.LongTensor(self.batch_size, self.max_length).cuda()
-        context_char_idxs = torch.LongTensor(self.batch_size, self.max_length, self.char_limit).cuda()
+        context_ner = torch.LongTensor(self.batch_size, self.max_length).to(self.device)
+        context_char_idxs = torch.LongTensor(self.batch_size, self.max_length, self.char_limit).to(self.device)
 
-        relation_label = torch.LongTensor(self.batch_size, self.h_t_limit).cuda()
+        relation_label = torch.LongTensor(self.batch_size, self.h_t_limit).to(self.device)
 
-        ht_pair_pos = torch.LongTensor(self.batch_size, self.h_t_limit).cuda()
+        ht_pair_pos = torch.LongTensor(self.batch_size, self.h_t_limit).to(self.device)
 
-        context_seg = torch.LongTensor(self.batch_size, self.max_length).cuda()
+        context_seg = torch.LongTensor(self.batch_size, self.max_length).to(self.device)
 
         node_position_sent = torch.zeros(self.batch_size, self.max_sent_num, self.max_node_per_sent, self.max_sent_len).float()
 
         #cgnn_adj = torch.zeros(self.batch_size, 5, self.max_length,self.max_length).float() # 5 indicate the rational type in GCGNN
-        node_position =  torch.zeros(self.batch_size, self.max_node_num, self.max_length).float().cuda()
+        node_position =  torch.zeros(self.batch_size, self.max_node_num, self.max_length).float().to(self.device)
 
-        sdp_position = torch.zeros(self.batch_size, self.max_entity_num, self.max_length).float().cuda()
-        sdp_num = torch.zeros(self.batch_size, 1).long().cuda()
+        sdp_position = torch.zeros(self.batch_size, self.max_entity_num, self.max_length).float().to(self.device)
+        sdp_num = torch.zeros(self.batch_size, 1).long().to(self.device)
 
-        node_sent_num =  torch.zeros(self.batch_size, self.max_sent_num).float().cuda()
+        node_sent_num =  torch.zeros(self.batch_size, self.max_sent_num).float().to(self.device)
 
-        entity_position =  torch.zeros(self.batch_size, self.max_entity_num, self.max_length).float().cuda()
-        node_num = torch.zeros(self.batch_size, 1).long().cuda()
+        entity_position =  torch.zeros(self.batch_size, self.max_entity_num, self.max_length).float().to(self.device)
+        node_num = torch.zeros(self.batch_size, 1).long().to(self.device)
 
         for b in range(self.train_batches):
 
@@ -460,26 +462,26 @@ class Config(object):
                    }
 
     def get_test_batch(self):
-        context_idxs = torch.LongTensor(self.test_batch_size, self.max_length).cuda()
-        context_pos = torch.LongTensor(self.test_batch_size, self.max_length).cuda()
-        h_mapping = torch.Tensor(self.test_batch_size, self.test_relation_limit, self.max_length).cuda()
-        t_mapping = torch.Tensor(self.test_batch_size, self.test_relation_limit, self.max_length).cuda()
-        context_ner = torch.LongTensor(self.test_batch_size, self.max_length).cuda()
-        context_char_idxs = torch.LongTensor(self.test_batch_size, self.max_length, self.char_limit).cuda()
-        relation_mask = torch.Tensor(self.test_batch_size, self.h_t_limit).cuda()
-        ht_pair_pos = torch.LongTensor(self.test_batch_size, self.h_t_limit).cuda()
-        context_seg = torch.LongTensor(self.batch_size, self.max_length).cuda()
+        context_idxs = torch.LongTensor(self.test_batch_size, self.max_length).to(self.device)
+        context_pos = torch.LongTensor(self.test_batch_size, self.max_length).to(self.device)
+        h_mapping = torch.Tensor(self.test_batch_size, self.test_relation_limit, self.max_length).to(self.device)
+        t_mapping = torch.Tensor(self.test_batch_size, self.test_relation_limit, self.max_length).to(self.device)
+        context_ner = torch.LongTensor(self.test_batch_size, self.max_length).to(self.device)
+        context_char_idxs = torch.LongTensor(self.test_batch_size, self.max_length, self.char_limit).to(self.device)
+        relation_mask = torch.Tensor(self.test_batch_size, self.h_t_limit).to(self.device)
+        ht_pair_pos = torch.LongTensor(self.test_batch_size, self.h_t_limit).to(self.device)
+        context_seg = torch.LongTensor(self.batch_size, self.max_length).to(self.device)
 
         node_position_sent =  torch.zeros(self.batch_size, self.max_sent_num, self.max_node_per_sent, self.max_sent_len).float()
 
-        node_position =  torch.zeros(self.batch_size, self.max_node_num, self.max_length).float().cuda()
-        entity_position =  torch.zeros(self.batch_size, self.max_entity_num, self.max_length).float().cuda()
-        node_num = torch.zeros(self.batch_size, 1).long().cuda()
+        node_position =  torch.zeros(self.batch_size, self.max_node_num, self.max_length).float().to(self.device)
+        entity_position =  torch.zeros(self.batch_size, self.max_entity_num, self.max_length).float().to(self.device)
+        node_num = torch.zeros(self.batch_size, 1).long().to(self.device)
 
-        node_sent_num =  torch.zeros(self.batch_size, self.max_sent_num).float().cuda()
+        node_sent_num =  torch.zeros(self.batch_size, self.max_sent_num).float().to(self.device)
 
-        sdp_position = torch.zeros(self.batch_size, self.max_entity_num, self.max_length).float().cuda()
-        sdp_num = torch.zeros(self.batch_size, 1).long().cuda()
+        sdp_position = torch.zeros(self.batch_size, self.max_entity_num, self.max_length).float().to(self.device)
+        sdp_num = torch.zeros(self.batch_size, 1).long().to(self.device)
 
         for b in range(self.test_batches):
 
@@ -622,7 +624,7 @@ class Config(object):
         ori_model = model_pattern(config = self)
         if self.pretrain_model != None:
             ori_model.load_state_dict(torch.load(self.pretrain_model))
-        ori_model.cuda()
+        ori_model = ori_model.to(self.device)
 
         parameters = [p for p in ori_model.parameters() if p.requires_grad]
 
@@ -684,35 +686,35 @@ class Config(object):
                 dis_h_2_t = ht_pair_pos+10
                 dis_t_2_h = -ht_pair_pos+10
 
-                torch.cuda.empty_cache()
+                # torch.cuda.empty_cache()
 
-                context_idxs = context_idxs.cuda()
-                context_pos = context_pos.cuda()
-                context_ner = context_ner.cuda()
-                #context_char_idxs = context_char_idxs.cuda()
-                #input_lengths = input_lengths.cuda()
-                h_mapping = h_mapping.cuda()
-                t_mapping = t_mapping.cuda()
-                relation_mask = relation_mask.cuda()
-                dis_h_2_t = dis_h_2_t.cuda()
-                dis_t_2_h = dis_t_2_h.cuda()
+                context_idxs = context_idxs.to(self.device)
+                context_pos = context_pos.to(self.device)
+                context_ner = context_ner.to(self.device)
+                #context_char_idxs = context_char_idxs.to(self.device)
+                #input_lengths = input_lengths.to(self.device)
+                h_mapping = h_mapping.to(self.device)
+                t_mapping = t_mapping.to(self.device)
+                relation_mask = relation_mask.to(self.device)
+                dis_h_2_t = dis_h_2_t.to(self.device)
+                dis_t_2_h = dis_t_2_h.to(self.device)
 
-                node_position = data['node_position'].cuda()
-                entity_position = data['entity_position'].cuda()
-                node_sent_num = data['node_sent_num'].cuda()
-                all_node_num = data['all_node_num'].cuda()
-                entity_num = torch.Tensor(data['entity_num']).cuda()
-                #sent_num = torch.Tensor(data['sent_num']).cuda()
+                node_position = data['node_position'].to(self.device)
+                entity_position = data['entity_position'].to(self.device)
+                node_sent_num = data['node_sent_num'].to(self.device)
+                all_node_num = data['all_node_num'].to(self.device)
+                entity_num = torch.Tensor(data['entity_num']).to(self.device)
+                #sent_num = torch.Tensor(data['sent_num']).to(self.device)
 
-                sdp_pos = data['sdp_position'].cuda()
-                sdp_num = torch.Tensor(data['sdp_num']).cuda()
+                sdp_pos = data['sdp_position'].to(self.device)
+                sdp_num = torch.Tensor(data['sdp_num']).to(self.device)
 
                 predict_re = model(context_idxs, context_pos, context_ner,
                                    h_mapping, t_mapping, relation_mask, dis_h_2_t, dis_t_2_h, context_seg,
                                    node_position, entity_position, node_sent_num,
                                    all_node_num, entity_num, sdp_pos, sdp_num)
 
-                relation_multi_label = relation_multi_label.cuda()
+                relation_multi_label = relation_multi_label.to(self.device)
 
                 loss = torch.sum(BCE(predict_re, relation_multi_label)*relation_mask.unsqueeze(2)) / torch.sum(relation_mask)
 
@@ -826,15 +828,15 @@ class Config(object):
                 dis_h_2_t = ht_pair_pos+10
                 dis_t_2_h = -ht_pair_pos+10
 
-                node_position = data['node_position'].cuda()
-                entity_position = data['entity_position'].cuda()
-                #node_position_sent = data['node_position_sent']#.cuda()
-                node_sent_num = data['node_sent_num'].cuda()
-                all_node_num = data['all_node_num'].cuda()
-                entity_num = torch.Tensor(data['entity_num']).cuda()
-                #sent_num = torch.Tensor(data['sent_num']).cuda()
-                sdp_pos = data['sdp_position'].cuda()
-                sdp_num = torch.Tensor(data['sdp_num']).cuda()
+                node_position = data['node_position'].to(self.device)
+                entity_position = data['entity_position'].to(self.device)
+                #node_position_sent = data['node_position_sent']#.to(self.device)
+                node_sent_num = data['node_sent_num'].to(self.device)
+                all_node_num = data['all_node_num'].to(self.device)
+                entity_num = torch.Tensor(data['entity_num']).to(self.device)
+                #sent_num = torch.Tensor(data['sent_num']).to(self.device)
+                sdp_pos = data['sdp_position'].to(self.device)
+                sdp_num = torch.Tensor(data['sdp_num']).to(self.device)
                 predict_re = model(context_idxs, context_pos, context_ner,
                                    h_mapping, t_mapping, relation_mask, dis_h_2_t, dis_t_2_h, context_seg,
                                    node_position, entity_position, node_sent_num,
@@ -959,7 +961,7 @@ class Config(object):
         model = model_pattern(config = self)
 
         model.load_state_dict(torch.load(os.path.join(self.checkpoint_dir, model_name)))
-        model.cuda()
+        model.to(self.device)
         model.eval()
         f1, f1_ig, auc, pr_x, pr_y = self.test(model, model_name,  True, input_theta)
 
