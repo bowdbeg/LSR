@@ -5,8 +5,11 @@ import torch.nn.functional as F
 
 from models.gcn import GraphConvLayer
 
+
 class StructInduction(nn.Module):
-    def __init__(self, sem_dim_size, sent_hiddent_size, bidirectional):#, py_version):
+    def __init__(
+        self, sem_dim_size, sent_hiddent_size, bidirectional
+    ):  # , py_version):
         super(StructInduction, self).__init__()
         self.bidirectional = bidirectional
         self.sem_dim_size = sem_dim_size
@@ -29,7 +32,9 @@ class StructInduction(nn.Module):
         self.exparam = nn.Parameter(torch.Tensor(1, 1, self.sem_dim_size))
         torch.nn.init.xavier_uniform_(self.exparam)
 
-        self.fzlinear = nn.Linear(3 * self.sem_dim_size, 2*self.sem_dim_size, bias=True)
+        self.fzlinear = nn.Linear(
+            3 * self.sem_dim_size, 2 * self.sem_dim_size, bias=True
+        )
         torch.nn.init.xavier_uniform_(self.fzlinear.weight)
         nn.init.constant_(self.fzlinear.bias, 0)
 
@@ -38,25 +43,48 @@ class StructInduction(nn.Module):
         batch_size, token_size, dim_size = input.size()
 
         """STEP1: Calculating Attention Matrix"""
-        if (self.bidirectional):
+        if self.bidirectional:
             input = input.view(batch_size, token_size, 2, dim_size // 2)
-            sem_v = torch.cat((input[:, :, 0, :self.sem_dim_size // 2], input[:, :, 1, :self.sem_dim_size // 2]), 2)
-            str_v = torch.cat((input[:, :, 0, self.sem_dim_size // 2:], input[:, :, 1, self.sem_dim_size // 2:]), 2)
+            sem_v = torch.cat(
+                (
+                    input[:, :, 0, : self.sem_dim_size // 2],
+                    input[:, :, 1, : self.sem_dim_size // 2],
+                ),
+                2,
+            )
+            str_v = torch.cat(
+                (
+                    input[:, :, 0, self.sem_dim_size // 2 :],
+                    input[:, :, 1, self.sem_dim_size // 2 :],
+                ),
+                2,
+            )
         else:
-            sem_v = input[:, :, :self.sem_dim_size]
-            str_v = input[:, :, self.sem_dim_size:]
+            sem_v = input[:, :, : self.sem_dim_size]
+            str_v = input[:, :, self.sem_dim_size :]
 
         tp = torch.tanh(self.tp_linear(str_v))  # b*s, token, h1
         tc = torch.tanh(self.tc_linear(str_v))  # b*s, token, h1
-        tp = tp.unsqueeze(2).expand(tp.size(0), tp.size(1), tp.size(1), tp.size(2)).contiguous()
-        tc = tc.unsqueeze(2).expand(tc.size(0), tc.size(1), tc.size(1), tc.size(2)).contiguous()
+        tp = (
+            tp.unsqueeze(2)
+            .expand(tp.size(0), tp.size(1), tp.size(1), tp.size(2))
+            .contiguous()
+        )
+        tc = (
+            tc.unsqueeze(2)
+            .expand(tc.size(0), tc.size(1), tc.size(1), tc.size(2))
+            .contiguous()
+        )
 
+        f_ij = self.bilinear(tp, tc).squeeze(-1)  # b*s, token , token
+        f_i = torch.exp(self.fi_linear(str_v)).squeeze(-1)  # b*s, token
 
-        f_ij = self.bilinear(tp, tc).squeeze()  # b*s, token , token
-        f_i = torch.exp(self.fi_linear(str_v)).squeeze()  # b*s, token
-
-        mask = torch.ones(f_ij.size(1), f_ij.size(1)) - torch.eye(f_ij.size(1), f_ij.size(1))
-        mask = mask.unsqueeze(0).expand(f_ij.size(0), mask.size(0), mask.size(1)).to(input)
+        mask = torch.ones(f_ij.size(1), f_ij.size(1)) - torch.eye(
+            f_ij.size(1), f_ij.size(1)
+        )
+        mask = (
+            mask.unsqueeze(0).expand(f_ij.size(0), mask.size(0), mask.size(1)).to(input)
+        )
         A_ij = torch.exp(f_ij) * mask
 
         """STEP: Incude Latent Structure"""
@@ -103,11 +131,12 @@ class StructInduction(nn.Module):
 
         return output, df
 
+
 class StructInductionNoSplit(nn.Module):
-    def __init__(self, sent_hiddent_size, bidirectional):#, py_version):
+    def __init__(self, sent_hiddent_size, bidirectional):  # , py_version):
         super(StructInductionNoSplit, self).__init__()
         self.bidirectional = bidirectional
-        self.str_dim_size = sent_hiddent_size #- self.sem_dim_size
+        self.str_dim_size = sent_hiddent_size  # - self.sem_dim_size
 
         self.model_dim = sent_hiddent_size
 
@@ -124,8 +153,12 @@ class StructInductionNoSplit(nn.Module):
         query = query / math.sqrt(self.model_dim)
         f_ij = torch.matmul(query, key.transpose(1, 2))
 
-        mask = torch.ones(f_ij.size(1), f_ij.size(1)) - torch.eye(f_ij.size(1), f_ij.size(1))
-        mask = mask.unsqueeze(0).expand(f_ij.size(0), mask.size(0), mask.size(1)).to(input)
+        mask = torch.ones(f_ij.size(1), f_ij.size(1)) - torch.eye(
+            f_ij.size(1), f_ij.size(1)
+        )
+        mask = (
+            mask.unsqueeze(0).expand(f_ij.size(0), mask.size(0), mask.size(1)).to(input)
+        )
         A_ij = torch.exp(f_ij) * mask
 
         tmp = torch.sum(A_ij, dim=1)  # nan: dimension
@@ -163,27 +196,31 @@ class StructInductionNoSplit(nn.Module):
 
         return output, df
 
+
 def b_inv(b_mat):
     eye = torch.rand(b_mat.size(0), b_mat.size(1), b_mat.size(2)).to(b_mat)
     b_inv, _ = torch.gesv(eye, b_mat)
     return b_inv
 
+
 class DynamicReasoner(nn.Module):
-    def __init__(self, hidden_size, gcn_layer, dropout_gcn,device=torch.device('cpu')):
+    def __init__(self, hidden_size, gcn_layer, dropout_gcn, device=torch.device("cpu")):
         super(DynamicReasoner, self).__init__()
         self.hidden_size = hidden_size
         self.gcn_layer = gcn_layer
         self.dropout_gcn = dropout_gcn
         self.struc_att = StructInduction(hidden_size // 2, hidden_size, True)
-        self.gcn = GraphConvLayer(hidden_size, self.gcn_layer, self.dropout_gcn, self_loop=True, device=device)
+        self.gcn = GraphConvLayer(
+            hidden_size, self.gcn_layer, self.dropout_gcn, self_loop=True, device=device
+        )
 
     def forward(self, input):
-        '''
+        """
         :param input:
         :return:
-        '''
-        '''Structure Induction'''
+        """
+        """Structure Induction"""
         _, att = self.struc_att(input)
-        '''Perform reasoning'''
+        """Perform reasoning"""
         output = self.gcn(att[:, :, 1:], input)
         return output

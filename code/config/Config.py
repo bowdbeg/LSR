@@ -78,7 +78,16 @@ class Config(object):
         self.use_bag = False
         self.use_gpu = True
         self.is_training = True
-        self.max_length = 750
+        # olivetti setting
+        # self.max_length = 750
+        # self.max_entity_num = 323
+        # self.max_node_num = 800
+        # self.max_node_per_sent = 70
+        self.max_length = 512
+        self.max_entity_num = 100
+        self.max_node_num = 200
+        self.max_node_per_sent = 40
+
         self.pos_num = 2 * self.max_length
         self.entity_num = self.max_length
 
@@ -86,10 +95,7 @@ class Config(object):
         self.ner_vocab_len = 13
 
         self.max_sent_len = 200
-        self.max_entity_num = 323
         self.max_sent_num = 30
-        self.max_node_num = 800
-        self.max_node_per_sent = 70
 
         self.rnn_hidden = args.hidden_dim  # hidden emb dim
         self.coref_size = args.coref_dim  # coref emb dim
