@@ -112,6 +112,9 @@ parser.add_argument(
 parser.add_argument(
     "--info", type=str, default="", help="Optional info for the experiment."
 )
+parser.add_argument(
+    "--mode", type=str, default="docred", choices=["olivetti", "docred"]
+)
 
 # others
 parser.add_argument("--seed", type=int, default=SEED)
