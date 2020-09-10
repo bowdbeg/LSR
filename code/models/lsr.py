@@ -175,7 +175,6 @@ class LSR(nn.Module):
         """
 
         """===========STEP1: Encode the document============="""
-        print(context_ner.size(), context_ner.unique())
         sent_emb = torch.cat(
             [
                 self.word_emb(context_idxs),
