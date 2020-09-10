@@ -175,7 +175,7 @@ class DynamicReasoner(nn.Module):
         self.gcn_layer = gcn_layer
         self.dropout_gcn = dropout_gcn
         self.struc_att = StructInduction(hidden_size // 2, hidden_size, True)
-        self.gcn = GraphConvLayer(hidden_size, self.gcn_layer, self.dropout_gcn, self_loop=True, device)
+        self.gcn = GraphConvLayer(hidden_size, self.gcn_layer, self.dropout_gcn, self_loop=True, device=device)
 
     def forward(self, input):
         '''
