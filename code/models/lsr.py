@@ -21,7 +21,7 @@ class LSR(nn.Module):
         if not self.finetune_emb:
             self.word_emb.weight.requires_grad = False
 
-        self.ner_emb = nn.Embedding(13, config.entity_type_size, padding_idx=0)
+        self.ner_emb = nn.Embedding(23, config.entity_type_size, padding_idx=0)
 
         self.coref_embed = nn.Embedding(
             config.max_length, config.coref_size, padding_idx=0
@@ -175,6 +175,7 @@ class LSR(nn.Module):
         """
 
         """===========STEP1: Encode the document============="""
+        print(context_ner.size(), context_ner.unique())
         sent_emb = torch.cat(
             [
                 self.word_emb(context_idxs),
