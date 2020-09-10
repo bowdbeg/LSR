@@ -15,6 +15,7 @@ import gc
 from collections import defaultdict
 
 from operator import add
+from tqdm import tqdm
 
 # BERT_ENCODER = 'bert'
 # CHEMICAL_TYPE = 'Chemical'
@@ -91,7 +92,7 @@ class Config(object):
         self.pos_num = 2 * self.max_length
         self.entity_num = self.max_length
 
-        self.relation_num = 97
+        self.relation_num = 16
         self.ner_vocab_len = 13
 
         self.max_sent_len = 200
@@ -889,7 +890,7 @@ class Config(object):
 
             epoch_start_time = time.time()
 
-            for no, data in enumerate(self.get_train_batch()):
+            for no, data in enumerate(tqdm(self.get_train_batch())):
                 context_idxs = data["context_idxs"]
                 context_pos = data["context_pos"]
                 h_mapping = data["h_mapping"]
