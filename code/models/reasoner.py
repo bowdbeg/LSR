@@ -56,12 +56,12 @@ class StructInduction(nn.Module):
         f_i = torch.exp(self.fi_linear(str_v)).squeeze()  # b*s, token
 
         mask = torch.ones(f_ij.size(1), f_ij.size(1)) - torch.eye(f_ij.size(1), f_ij.size(1))
-        mask = mask.unsqueeze(0).expand(f_ij.size(0), mask.size(0), mask.size(1)).cuda()
+        mask = mask.unsqueeze(0).expand(f_ij.size(0), mask.size(0), mask.size(1)).to(input)
         A_ij = torch.exp(f_ij) * mask
 
         """STEP: Incude Latent Structure"""
         tmp = torch.sum(A_ij, dim=1)  # nan: dimension
-        res = torch.zeros(batch_size, token_size, token_size).cuda()
+        res = torch.zeros(batch_size, token_size, token_size).to(input)
         # tmp = torch.stack([torch.diag(t) for t in tmp])
         res.as_strided(tmp.size(), [res.stride(0), res.size(2) + 1]).copy_(tmp)
         L_ij = -A_ij + res  # A_ij has 0s as diagonals
@@ -84,8 +84,8 @@ class StructInduction(nn.Module):
         temp12 = torch.ones(batch_size, token_size, token_size - 1)
         temp22 = torch.ones(batch_size, token_size - 1, token_size)
 
-        mask1 = torch.cat([temp11, temp12], 2).cuda()
-        mask2 = torch.cat([temp21, temp22], 1).cuda()
+        mask1 = torch.cat([temp11, temp12], 2).to(input)
+        mask2 = torch.cat([temp21, temp22], 1).to(input)
 
         dx = mask1 * tmp1 - mask2 * tmp2
 
@@ -125,11 +125,11 @@ class StructInductionNoSplit(nn.Module):
         f_ij = torch.matmul(query, key.transpose(1, 2))
 
         mask = torch.ones(f_ij.size(1), f_ij.size(1)) - torch.eye(f_ij.size(1), f_ij.size(1))
-        mask = mask.unsqueeze(0).expand(f_ij.size(0), mask.size(0), mask.size(1)).cuda()
+        mask = mask.unsqueeze(0).expand(f_ij.size(0), mask.size(0), mask.size(1)).to(input)
         A_ij = torch.exp(f_ij) * mask
 
         tmp = torch.sum(A_ij, dim=1)  # nan: dimension
-        res = torch.zeros(batch_size, token_size, token_size).cuda()
+        res = torch.zeros(batch_size, token_size, token_size).to(input)
         res.as_strided(tmp.size(), [res.stride(0), res.size(2) + 1]).copy_(tmp)
         L_ij = -A_ij + res  # A_ij has 0s as diagonals
 
@@ -151,8 +151,8 @@ class StructInductionNoSplit(nn.Module):
         temp12 = torch.ones(batch_size, token_size, token_size - 1)
         temp22 = torch.ones(batch_size, token_size - 1, token_size)
 
-        mask1 = torch.cat([temp11, temp12], 2).cuda()
-        mask2 = torch.cat([temp21, temp22], 1).cuda()
+        mask1 = torch.cat([temp11, temp12], 2).to(input)
+        mask2 = torch.cat([temp21, temp22], 1).to(input)
 
         dx = mask1 * tmp1 - mask2 * tmp2
 
@@ -164,18 +164,18 @@ class StructInductionNoSplit(nn.Module):
         return output, df
 
 def b_inv(b_mat):
-    eye = torch.rand(b_mat.size(0), b_mat.size(1), b_mat.size(2)).cuda()
+    eye = torch.rand(b_mat.size(0), b_mat.size(1), b_mat.size(2)).to(b_mat)
     b_inv, _ = torch.gesv(eye, b_mat)
     return b_inv
 
 class DynamicReasoner(nn.Module):
-    def __init__(self, hidden_size, gcn_layer, dropout_gcn):
+    def __init__(self, hidden_size, gcn_layer, dropout_gcn,device=torch.device('cpu')):
         super(DynamicReasoner, self).__init__()
         self.hidden_size = hidden_size
         self.gcn_layer = gcn_layer
         self.dropout_gcn = dropout_gcn
         self.struc_att = StructInduction(hidden_size // 2, hidden_size, True)
-        self.gcn = GraphConvLayer(hidden_size, self.gcn_layer, self.dropout_gcn, self_loop=True)
+        self.gcn = GraphConvLayer(hidden_size, self.gcn_layer, self.dropout_gcn, self_loop=True, device)
 
     def forward(self, input):
         '''

@@ -2,10 +2,13 @@ import torch.nn as nn
 import torch
 import torch.nn.functional as F
 
+
 class GraphConvLayer(nn.Module):
     """ A GCN module operated on dependency graphs. """
 
-    def __init__(self, mem_dim, layers, dropout, self_loop = False):
+    def __init__(
+        self, mem_dim, layers, dropout, self_loop=False, device=torch.device("cpu")
+    ):
         super(GraphConvLayer, self).__init__()
         self.mem_dim = mem_dim
         self.layers = layers
@@ -18,12 +21,13 @@ class GraphConvLayer(nn.Module):
         # dcgcn block
         self.weight_list = nn.ModuleList()
         for i in range(self.layers):
-            self.weight_list.append(nn.Linear((self.mem_dim + self.head_dim * i), self.head_dim))
+            self.weight_list.append(
+                nn.Linear((self.mem_dim + self.head_dim * i), self.head_dim)
+            )
 
-        self.weight_list = self.weight_list.cuda()
-        self.linear_output = self.linear_output.cuda()
+        self.weight_list = self.weight_list.to(device)
+        self.linear_output = self.linear_output.to(device)
         self.self_loop = self_loop
-
 
     def forward(self, adj, gcn_inputs):
         # gcn layer
@@ -37,7 +41,7 @@ class GraphConvLayer(nn.Module):
             Ax = adj.bmm(outputs)
             AxW = self.weight_list[l](Ax)
             if self.self_loop:
-                AxW = AxW  + self.weight_list[l](outputs)  # self loop
+                AxW = AxW + self.weight_list[l](outputs)  # self loop
             else:
                 AxW = AxW
 
@@ -54,10 +58,11 @@ class GraphConvLayer(nn.Module):
 
         return out
 
+
 class MultiGraphConvLayer(nn.Module):
     """ A GCN module operated on multihead attention """
 
-    def __init__(self,mem_dim, layers, heads, dropout):
+    def __init__(self, mem_dim, layers, heads, dropout, device=torch.device("cpu")):
         super(MultiGraphConvLayer, self).__init__()
         self.mem_dim = mem_dim
         self.layers = layers
@@ -71,16 +76,18 @@ class MultiGraphConvLayer(nn.Module):
 
         for i in range(self.heads):
             for j in range(self.layers):
-                self.weight_list.append(nn.Linear(self.mem_dim + self.head_dim * j, self.head_dim))
+                self.weight_list.append(
+                    nn.Linear(self.mem_dim + self.head_dim * j, self.head_dim)
+                )
 
-        self.weight_list = self.weight_list.cuda()
-        self.Linear = self.Linear.cuda()
+        self.weight_list = self.weight_list.to(device)
+        self.Linear = self.Linear.to(device)
 
     def forward(self, adj_list, gcn_inputs):
 
         multi_head_list = []
         for i in range(self.heads):
-            adj = adj_list[:,i]
+            adj = adj_list[:, i]
             denom = adj.sum(2).unsqueeze(2) + 1
             outputs = gcn_inputs
             cache_list = [outputs]
